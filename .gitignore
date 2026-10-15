@@ -1,0 +1,21 @@
+# Виртуальное окружение
+.venv/
+venv/
+env/
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+
+# PyCharm / IDE
+.idea/
+.vscode/
+
+# Окружение и секреты
+.env
+
+# Логи и кэш
+*.log
+.pytest_cache/
