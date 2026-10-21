@@ -1,36 +1,49 @@
-import numpy as np
 import pandas as pd
-import xgboost as xgb
-from app.model_loader import model_instance
+from app.model_loader import all_models
+
+# Строгий порядок признаков, как в ноутбуке
+FEATURE_COLUMNS = [
+    'temperature_mean_c',
+    'relative_humidity_pct',
+    'precip_mm_per_day',
+    'Q',
+    'SWE',
+    'month',
+    'month_sin',
+    'month_cos',
+    'Q_lag_1',
+    'Q_lag_2',
+    'Q_lag_3',
+    'Q_lag_7',
+    'Q_lag_14'
+]
 
 
-# from app.schemas import ForecastInput
-
-def prepare_features(input_data: dict) -> np.ndarray:
-    """Преобразует словарь входных данных в формат, понятный модели."""
-    # Создаем DataFrame из одной строки данных
+def prepare_features(input_data: dict) -> pd.DataFrame:
+    """Преобразует словарь из API в DataFrame с правильным порядком колонок."""
     df = pd.DataFrame([input_data])
-
-    # Если нужен скалер:
-    # df_scaled = scaler.transform(df)
-    # return df_scaled
-
-    # Для XGBoost часто можно подавать DataFrame напрямую, но лучше проверить требования вашей модели
-    # Если модель обучалась на numpy array:
-    return df.values
+    # Принудительно выстраиваем колонки в том же порядке, что был при обучении
+    return df[FEATURE_COLUMNS]
 
 
-def make_prediction(features: np.ndarray) -> list:
-    """Делает прогноз на 3 дня."""
-    # Создаем DMatrix для XGBoost
-    dmatrix = xgb.DMatrix(features)
+def make_prediction(features: pd.DataFrame) -> dict:
+    """Делает прогноз на 1, 2 и 3 дня, используя 3 разные модели."""
 
-    # Предсказание
-    preds = model_instance.predict(dmatrix)
+    # Предсказываем для каждого горизонта отдельно
+    pred_1 = all_models[1].predict(features)[0]
+    pred_2 = all_models[2].predict(features)[0]
+    pred_3 = all_models[3].predict(features)[0]
 
-    # Возвращаем список из 3 значений (если модель сразу выдает 3 значения)
-    # Или, если у вас 3 разные модели для h=1, h=2, h=3, нужно вызвать их по очереди.
-    # Судя по коду, у вас, вероятно, одна модель на каждый горизонт или одна мульти-аутпут.
-    # Адаптируйте этот блок под вашу конкретную реализацию модели.
+    # Отладочный вывод (опционально)
+    print(f"Прогноз на 1 день: {pred_1}")
+    print(f"Прогноз на 2 дня: {pred_2}")
+    print(f"Прогноз на 3 дня: {pred_3}")
 
-    return preds.tolist()
+    return {
+        "forecast_day_1": float(pred_1),
+        "forecast_day_2": float(pred_2),
+        "forecast_day_3": float(pred_3),
+        "model_name": "XGBoost Tuned (3 independent models)"
+    }
+
+# УДАЛИТЕ строку print(pred_1) отсюда! Она была на уровне модуля
