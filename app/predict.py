@@ -3,27 +3,14 @@ from app.model_loader import all_models
 
 # Строгий порядок признаков, как в ноутбуке
 FEATURE_COLUMNS = [
-    'temperature_mean_c',
-    'relative_humidity_pct',
-    'precip_mm_per_day',
-    'Q',
-    'SWE',
-    'month',
-    'month_sin',
-    'month_cos',
-    'Q_lag_1',
-    'Q_lag_2',
-    'Q_lag_3',
-    'Q_lag_7',
-    'Q_lag_14'
+    'temperature_mean_c', 'relative_humidity_pct', 'precip_mm_per_day',
+    'Q', 'SWE', 'month', 'month_sin', 'month_cos',
+    'Q_lag_1', 'Q_lag_2', 'Q_lag_3', 'Q_lag_7', 'Q_lag_14'
 ]
 
-
 def prepare_features(input_data: dict) -> pd.DataFrame:
-    """Преобразует словарь из API в DataFrame с правильным порядком колонок."""
     df = pd.DataFrame([input_data])
-    # Принудительно выстраиваем колонки в том же порядке, что был при обучении
-    return df[FEATURE_COLUMNS]
+    return df[FEATURE_COLUMNS]  # Принудительный порядок
 
 
 def make_prediction(features: pd.DataFrame) -> dict:
