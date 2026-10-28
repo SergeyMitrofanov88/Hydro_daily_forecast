@@ -1,5 +1,8 @@
+import logging
 import pandas as pd
 from app.model_loader import all_models
+
+logger = logging.getLogger("hydro_forecast.predict")
 
 # Строгий порядок признаков, как в ноутбуке
 FEATURE_COLUMNS = [
@@ -10,6 +13,7 @@ FEATURE_COLUMNS = [
 
 def prepare_features(input_data: dict) -> pd.DataFrame:
     df = pd.DataFrame([input_data])
+    logger.debug(f"Входные данные: {input_data}")
     return df[FEATURE_COLUMNS]  # Принудительный порядок
 
 
@@ -17,9 +21,14 @@ def make_prediction(features: pd.DataFrame) -> dict:
     """Делает прогноз на 1, 2 и 3 дня, используя 3 разные модели."""
 
     # Предсказываем для каждого горизонта отдельно
-    pred_1 = all_models[1].predict(features)[0]
-    pred_2 = all_models[2].predict(features)[0]
-    pred_3 = all_models[3].predict(features)[0]
+    pred_1 = max(0.0, all_models[1].predict(features)[0]) # max для того, чтобы не возникло отрицательных расходов
+    pred_2 = max(0.0, all_models[2].predict(features)[0])
+    pred_3 = max(0.0, all_models[3].predict(features)[0])
+
+    # INFO — важное событие для мониторинга
+    logger.info(
+        f"Прогноз выполнен: day1={pred_1:.2f}, day2={pred_2:.2f}, day3={pred_3:.2f} м³/с"
+    )
 
     # Отладочный вывод (опционально)
     print(f"Прогноз на 1 день: {pred_1}")
@@ -33,4 +42,3 @@ def make_prediction(features: pd.DataFrame) -> dict:
         "model_name": "XGBoost Tuned (3 independent models)"
     }
 
-# УДАЛИТЕ строку print(pred_1) отсюда! Она была на уровне модуля

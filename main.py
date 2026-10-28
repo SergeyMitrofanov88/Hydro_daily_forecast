@@ -1,6 +1,19 @@
+import logging
+
+logging.basicConfig(
+    level=logging.INFO,  # <-- явно задаём уровень
+    format='%(asctime)s | %(levelname)-8s | %(name)s | %(message)s',
+    datefmt='%Y-%m-%d %H:%M:%S',
+    force=True  # <-- ВАЖНО! Принудительно пересоздаёт конфигурацию
+)
+
+logging.warning("ЛОГИРОВАНИЕ РАБОТАЕТ!")
+
 from fastapi import FastAPI, HTTPException
 from app.schemas import ForecastInput, ForecastOutput
 from app.predict import prepare_features, make_prediction
+
+logger = logging.getLogger(__name__)
 
 app = FastAPI(title="Hydro Forecast Service", version="1.0.0")
 
@@ -13,23 +26,17 @@ def read_root():
 @app.post("/predict", response_model=ForecastOutput)
 def predict_forecast(input_data: ForecastInput):
     try:
-        # 1. Подготовка данных
-        features = prepare_features(input_data.dict())
+        logger.info(f"Получен запрос на прогнозирование")
+        logger.debug(f"Входные данные: {input_data.dict()}")
 
-        # 2. Предсказание
-        predictions = make_prediction(features)
+        features = prepare_features(input_data.dict()) #Подготовка данных
 
-        # 3. Формирование ответа
-        # Предполагаем, что predictions - это список [day1, day2, day3]
-        if len(predictions) < 3:
-            # Если модель предсказывает только одно значение за раз,
-            # тут должна быть логика вызова модели 3 раза с обновлением лагов
-            pass
+        predictions = make_prediction(features) #Предсказание
 
-        return ForecastOutput(
-            forecast_day_1=predictions[0],
-            forecast_day_2=predictions[1],
-            forecast_day_3=predictions[2]
-        )
+        logger.info("Прогноз успешно сформирован")
+        return ForecastOutput(**predictions) #возврат результата
+
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        # WARNING — проблема с конфигурацией
+        logger.warning(f"Модель не найдена: {e}")
+        raise HTTPException(status_code=500, detail=str(e)) #сообщение об ошибке
